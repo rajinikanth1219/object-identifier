@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.env
+uploads.db
+static/uploads/
+*.h5
+*.pt
+imagenet_labels.json

@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Object Identifier — CNN</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f0f1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      padding: 24px 40px;
+      border-bottom: 1px solid #2a2a4a;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    header .logo { font-size: 2rem; }
+    header h1 { font-size: 1.6rem; font-weight: 700; color: #fff; }
+    header p { font-size: 0.85rem; color: #888; margin-top: 2px; }
+
+    /* ── Main Layout ── */
+    main {
+      max-width: 1100px;
+      margin: 40px auto;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+    }
+
+    @media (max-width: 768px) { main { grid-template-columns: 1fr; } }
+
+    /* ── Card ── */
+    .card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 16px;
+      padding: 28px;
+    }
+    .card h2 {
+      font-size: 1.1rem;
+      color: #a78bfa;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── Upload Zone ── */
+    #drop-zone {
+      border: 2px dashed #3a3a6a;
+      border-radius: 12px;
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #12122a;
+    }
+    #drop-zone:hover, #drop-zone.drag-over {
+      border-color: #7c3aed;
+      background: #1a1040;
+    }
+    #drop-zone .icon { font-size: 3rem; margin-bottom: 12px; }
+    #drop-zone p { color: #888; font-size: 0.9rem; margin-top: 6px; }
+    #drop-zone span { color: #a78bfa; font-weight: 600; }
+    #file-input { display: none; }
+
+    /* ── Preview ── */
+    #preview-wrap { margin-top: 18px; display: none; text-align: center; }
+    #preview-img {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 10px;
+      border: 2px solid #3a3a6a;
+      object-fit: contain;
+    }
+    #file-name { font-size: 0.8rem; color: #666; margin-top: 6px; }
+
+    /* ── Button ── */
+    #upload-btn {
+      margin-top: 18px;
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      display: none;
+    }
+    #upload-btn:hover { opacity: 0.88; }
+    #upload-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Loader ── */
+    .loader {
+      display: none;
+      margin: 20px auto 0;
+      text-align: center;
+      color: #a78bfa;
+      font-size: 0.9rem;
+    }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid #3a3a6a;
+      border-top-color: #7c3aed;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 10px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Result Panel ── */
+    #result-panel {
+      display: none;
+      margin-top: 20px;
+      background: #12122a;
+      border: 1px solid #2a2a4a;
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .result-label {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #a78bfa;
+      text-align: center;
+    }
+    .result-conf {
+      text-align: center;
+      color: #888;
+      font-size: 0.85rem;
+      margin-top: 4px;
+    }
+    .badge {
+      display: inline-block;
+      background: #7c3aed22;
+      color: #a78bfa;
+      border: 1px solid #7c3aed55;
+      padding: 2px 10px;
+      border-radius: 99px;
+      font-size: 0.75rem;
+      margin-top: 8px;
+    }
+    .top3 { margin-top: 16px; }
+    .top3 h4 { font-size: 0.8rem; color: #555; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .top3-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .top3-item span { font-size: 0.9rem; }
+    .bar-wrap { flex: 1; margin: 0 12px; background: #2a2a4a; border-radius: 99px; height: 6px; overflow: hidden; }
+    .bar { height: 100%; background: linear-gradient(90deg, #7c3aed, #4f46e5); border-radius: 99px; transition: width 0.6s ease; }
+    .pct { font-size: 0.8rem; color: #888; min-width: 42px; text-align: right; }
+
+    /* ── Error ── */
+    .error-box {
+      display: none;
+      background: #2a1a1a;
+      border: 1px solid #6a2a2a;
+      color: #f87171;
+      padding: 14px;
+      border-radius: 10px;
+      margin-top: 16px;
+      font-size: 0.9rem;
+    }
+
+    /* ── History Table ── */
+    .history-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    thead th {
+      text-align: left;
+      padding: 10px 12px;
+      color: #555;
+      border-bottom: 1px solid #2a2a4a;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.75rem;
+    }
+    tbody tr {
+      border-bottom: 1px solid #1f1f3a;
+      transition: background 0.15s;
+    }
+    tbody tr:hover { background: #1f1f3a; }
+    tbody td { padding: 10px 12px; color: #ccc; }
+    tbody td.label-cell { color: #a78bfa; font-weight: 600; }
+    .no-history { color: #444; text-align: center; padding: 30px; font-size: 0.9rem; }
+
+    /* ── Full-width History Card ── */
+    .full-width { grid-column: 1 / -1; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">🧠</div>
+    <div>
+      <h1>Object Identifier</h1>
+      <p>Powered by CNN (MobileNetV2 · ImageNet · 1000 classes)</p>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ── Upload Card ── -->
+    <div class="card">
+      <h2>📤 Upload Image</h2>
+
+      <div id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <div class="icon">🖼️</div>
+        <strong>Click or drag & drop an image</strong>
+        <p>Supports <span>JPG, PNG, GIF, BMP, WEBP</span></p>
+        <p style="margin-top:8px;">Try: books, articles, laptops, bottles, chairs…</p>
+      </div>
+
+      <input type="file" id="file-input" accept="image/*" />
+
+      <div id="preview-wrap">
+        <img id="preview-img" alt="Preview" />
+        <div id="file-name"></div>
+      </div>
+
+      <button id="upload-btn" onclick="uploadImage()">🔍 Identify Object</button>
+
+      <div class="loader" id="loader">
+        <div class="spinner"></div>
+        Running CNN model…
+      </div>
+
+      <div class="error-box" id="error-box"></div>
+    </div>
+
+    <!-- ── Result Card ── -->
+    <div class="card">
+      <h2>🎯 Identification Result</h2>
+
+      <div id="result-panel">
+        <div style="text-align:center; margin-bottom:16px;">
+          <img id="result-img" style="max-width:100%; max-height:180px; border-radius:10px; object-fit:contain;" />
+        </div>
+        <div class="result-label" id="result-label">—</div>
+        <div class="result-conf" id="result-conf"></div>
+        <div style="text-align:center;"><span class="badge" id="conf-badge"></span></div>
+
+        <div class="top3" id="top3-section">
+          <h4>Top 3 Predictions</h4>
+          <div id="top3-bars"></div>
+        </div>
+      </div>
+
+      <div id="placeholder" style="color:#333; text-align:center; margin-top:60px; font-size:0.95rem;">
+        Upload an image to see the CNN result here.
+      </div>
+    </div>
+
+    <!-- ── History Card (full width) ── -->
+    <div class="card full-width">
+      <h2>🗃️ Upload History</h2>
+      <div class="history-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Filename</th>
+              <th>Identified Object</th>
+              <th>Confidence</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="history-body">
+            {% if history %}
+              {% for row in history %}
+              <tr>
+                <td>{{ row.id }}</td>
+                <td>{{ row.filename }}</td>
+                <td class="label-cell">{{ row.label }}</td>
+                <td>{{ row.confidence }}%</td>
+                <td>{{ row.timestamp }}</td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr><td colspan="5" class="no-history">No uploads yet. Upload an image to get started!</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    const fileInput  = document.getElementById("file-input");
+    const dropZone   = document.getElementById("drop-zone");
+    const previewWrap = document.getElementById("preview-wrap");
+    const previewImg  = document.getElementById("preview-img");
+    const fileNameEl  = document.getElementById("file-name");
+    const uploadBtn   = document.getElementById("upload-btn");
+    const loader      = document.getElementById("loader");
+    const resultPanel = document.getElementById("result-panel");
+    const placeholder = document.getElementById("placeholder");
+    const errorBox    = document.getElementById("error-box");
+
+    let selectedFile = null;
+
+    // ── Drag & Drop ──
+    dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
+    dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
+    dropZone.addEventListener("drop", e => {
+      e.preventDefault();
+      dropZone.classList.remove("drag-over");
+      const file = e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    });
+
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files[0]) handleFile(fileInput.files[0]);
+    });
+
+    function handleFile(file) {
+      selectedFile = file;
+      const reader = new FileReader();
+      reader.onload = e => {
+        previewImg.src = e.target.result;
+        previewWrap.style.display = "block";
+        fileNameEl.textContent = file.name;
+        uploadBtn.style.display = "block";
+        errorBox.style.display = "none";
+        resultPanel.style.display = "none";
+        placeholder.style.display = "block";
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function uploadImage() {
+      if (!selectedFile) return;
+
+      // Show loader, hide other elements
+      uploadBtn.disabled = true;
+      loader.style.display = "block";
+      errorBox.style.display = "none";
+      resultPanel.style.display = "none";
+      placeholder.style.display = "none";
+
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+
+      try {
+        const res = await fetch("/upload", { method: "POST", body: formData });
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          showError(data.error || "Upload failed.");
+          return;
+        }
+
+        showResult(data);
+        addHistoryRow(data);
+
+      } catch (err) {
+        showError("Network error. Is the Flask server running?");
+      } finally {
+        loader.style.display = "none";
+        uploadBtn.disabled = false;
+      }
+    }
+
+    function showResult(data) {
+      document.getElementById("result-img").src   = data.image_url;
+      document.getElementById("result-label").textContent = data.label;
+      document.getElementById("result-conf").textContent  = `Confidence: ${data.confidence}%`;
+      document.getElementById("conf-badge").textContent   = `${data.confidence}% confidence`;
+
+      // Top-3 bars
+      const barsEl = document.getElementById("top3-bars");
+      barsEl.innerHTML = "";
+      data.top3.forEach(item => {
+        barsEl.innerHTML += `
+          <div class="top3-item">
+            <span>${item.label}</span>
+            <div class="bar-wrap"><div class="bar" style="width:${item.confidence}%"></div></div>
+            <span class="pct">${item.confidence}%</span>
+          </div>`;
+      });
+
+      resultPanel.style.display = "block";
+      placeholder.style.display = "none";
+    }
+
+    function showError(msg) {
+      errorBox.textContent = "❌ " + msg;
+      errorBox.style.display = "block";
+      placeholder.style.display = "none";
+    }
+
+    function addHistoryRow(data) {
+      const tbody = document.getElementById("history-body");
+      const noRow = tbody.querySelector("td[colspan]");
+      if (noRow) noRow.parentElement.remove();
+
+      const now = new Date().toISOString().replace("T", " ").slice(0, 19);
+      const rows = tbody.querySelectorAll("tr");
+      const newId = rows.length + 1;
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${newId}</td>
+        <td>${data.filename}</td>
+        <td class="label-cell">${data.label}</td>
+        <td>${data.confidence}%</td>
+        <td>${now}</td>`;
+      tbody.insertBefore(tr, tbody.firstChild);
+    }
+  </script>
+
+</body>
+</html>
