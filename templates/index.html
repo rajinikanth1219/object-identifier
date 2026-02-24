@@ -1,138 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Object Identifier + KYC Verification</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f0f1a; color: #e0e0e0; min-height: 100vh; }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f0f1a;color:#e0e0e0;min-height:100vh}
 
-    header {
-      background: linear-gradient(135deg, #1a1a2e, #16213e);
-      padding: 24px 40px;
-      border-bottom: 1px solid #2a2a4a;
-      display: flex; align-items: center; gap: 14px;
-    }
-    header .logo { font-size: 2rem; }
-    header h1 { font-size: 1.6rem; font-weight: 700; color: #fff; }
-    header p { font-size: 0.85rem; color: #888; margin-top: 2px; }
+    header{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:22px 40px;border-bottom:1px solid #2a2a4a;display:flex;align-items:center;gap:14px}
+    header .logo{font-size:2rem}
+    header h1{font-size:1.5rem;font-weight:700;color:#fff}
+    header p{font-size:0.82rem;color:#888;margin-top:2px}
 
-    /* Tabs */
-    .tabs {
-      display: flex; gap: 0;
-      border-bottom: 2px solid #2a2a4a;
-      background: #12122a;
-      padding: 0 40px;
-    }
-    .tab-btn {
-      padding: 14px 28px;
-      background: none; border: none; color: #666;
-      font-size: 0.95rem; font-weight: 600; cursor: pointer;
-      border-bottom: 3px solid transparent; margin-bottom: -2px;
-      transition: all 0.2s;
-    }
-    .tab-btn.active { color: #a78bfa; border-bottom-color: #7c3aed; }
-    .tab-btn:hover { color: #ccc; }
+    .tabs{display:flex;border-bottom:2px solid #2a2a4a;background:#12122a;padding:0 40px}
+    .tab-btn{padding:13px 24px;background:none;border:none;color:#666;font-size:0.9rem;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s}
+    .tab-btn.active{color:#a78bfa;border-bottom-color:#7c3aed}
+    .tab-btn:hover{color:#ccc}
+    .tab-content{display:none}
+    .tab-content.active{display:block}
 
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
+    main{max-width:1100px;margin:36px auto;padding:0 20px}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+    @media(max-width:860px){.grid-2{grid-template-columns:1fr}}
+    .full-width{grid-column:1/-1}
 
-    main { max-width: 1100px; margin: 40px auto; padding: 0 20px; }
+    .card{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:16px;padding:24px}
+    .card h2{font-size:1rem;color:#a78bfa;margin-bottom:18px;display:flex;align-items:center;gap:8px}
 
-    /* Grid */
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
-    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
-    @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+    .drop-zone{border:2px dashed #3a3a6a;border-radius:12px;padding:24px 16px;text-align:center;cursor:pointer;transition:all .2s;background:#12122a}
+    .drop-zone:hover,.drop-zone.drag-over{border-color:#7c3aed;background:#1a1040}
+    .drop-zone .icon{font-size:2.2rem;margin-bottom:6px}
+    .drop-zone p{color:#888;font-size:0.82rem;margin-top:4px}
+    .drop-zone span{color:#a78bfa;font-weight:600}
 
-    /* Card */
-    .card {
-      background: #1a1a2e; border: 1px solid #2a2a4a;
-      border-radius: 16px; padding: 28px;
-    }
-    .card h2 { font-size: 1.1rem; color: #a78bfa; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+    .preview-wrap{margin-top:12px;display:none;text-align:center}
+    .preview-img{max-width:100%;max-height:150px;border-radius:10px;border:2px solid #3a3a6a;object-fit:contain}
+    .file-name{font-size:0.72rem;color:#555;margin-top:4px}
 
-    /* Drop Zone */
-    .drop-zone {
-      border: 2px dashed #3a3a6a; border-radius: 12px;
-      padding: 30px 20px; text-align: center; cursor: pointer;
-      transition: all 0.2s; background: #12122a;
-    }
-    .drop-zone:hover, .drop-zone.drag-over { border-color: #7c3aed; background: #1a1040; }
-    .drop-zone .icon { font-size: 2.5rem; margin-bottom: 8px; }
-    .drop-zone p { color: #888; font-size: 0.85rem; margin-top: 4px; }
-    .drop-zone span { color: #a78bfa; font-weight: 600; }
+    .btn{margin-top:14px;width:100%;padding:12px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border:none;border-radius:10px;font-size:0.92rem;font-weight:600;cursor:pointer;transition:opacity .2s}
+    .btn:hover{opacity:.88}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .btn-hidden{display:none}
 
-    .preview-wrap { margin-top: 14px; display: none; text-align: center; }
-    .preview-img { max-width: 100%; max-height: 160px; border-radius: 10px; border: 2px solid #3a3a6a; object-fit: contain; }
-    .file-name { font-size: 0.75rem; color: #555; margin-top: 4px; }
+    .loader{display:none;margin:14px auto 0;text-align:center;color:#a78bfa;font-size:0.82rem}
+    .spinner{width:28px;height:28px;border:3px solid #3a3a6a;border-top-color:#7c3aed;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 8px}
+    @keyframes spin{to{transform:rotate(360deg)}}
 
-    /* Button */
-    .btn {
-      margin-top: 14px; width: 100%; padding: 12px;
-      background: linear-gradient(135deg, #7c3aed, #4f46e5);
-      color: #fff; border: none; border-radius: 10px;
-      font-size: 0.95rem; font-weight: 600; cursor: pointer;
-      transition: opacity 0.2s; display: none;
-    }
-    .btn:hover { opacity: 0.88; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-full { display: block; margin-top: 20px; }
+    .result-panel{display:none;margin-top:16px;background:#12122a;border:1px solid #2a2a4a;border-radius:12px;padding:18px}
+    .result-label{font-size:1.4rem;font-weight:700;color:#a78bfa;text-align:center}
+    .result-conf{text-align:center;color:#888;font-size:0.82rem;margin-top:4px}
+    .badge{display:inline-block;background:#7c3aed22;color:#a78bfa;border:1px solid #7c3aed55;padding:2px 10px;border-radius:99px;font-size:0.72rem;margin-top:6px}
+    .top3{margin-top:14px}
+    .top3 h4{font-size:0.72rem;color:#555;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em}
+    .top3-item{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+    .top3-item span{font-size:0.82rem}
+    .bar-wrap{flex:1;margin:0 10px;background:#2a2a4a;border-radius:99px;height:5px;overflow:hidden}
+    .bar{height:100%;background:linear-gradient(90deg,#7c3aed,#4f46e5);border-radius:99px;transition:width .6s ease}
+    .pct{font-size:0.75rem;color:#888;min-width:38px;text-align:right}
 
-    /* Loader */
-    .loader { display: none; margin: 16px auto 0; text-align: center; color: #a78bfa; font-size: 0.85rem; }
-    .spinner { width: 30px; height: 30px; border: 3px solid #3a3a6a; border-top-color: #7c3aed; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 8px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-box{display:none;background:#2a1a1a;border:1px solid #6a2a2a;color:#f87171;padding:12px;border-radius:10px;margin-top:12px;font-size:0.82rem}
 
-    /* Result */
-    .result-panel { display: none; margin-top: 16px; background: #12122a; border: 1px solid #2a2a4a; border-radius: 12px; padding: 20px; }
-    .result-label { font-size: 1.5rem; font-weight: 700; color: #a78bfa; text-align: center; }
-    .result-conf { text-align: center; color: #888; font-size: 0.85rem; margin-top: 4px; }
-    .badge { display: inline-block; background: #7c3aed22; color: #a78bfa; border: 1px solid #7c3aed55; padding: 2px 10px; border-radius: 99px; font-size: 0.75rem; margin-top: 8px; }
-    .top3 { margin-top: 14px; }
-    .top3 h4 { font-size: 0.75rem; color: #555; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
-    .top3-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .top3-item span { font-size: 0.85rem; }
-    .bar-wrap { flex: 1; margin: 0 10px; background: #2a2a4a; border-radius: 99px; height: 5px; overflow: hidden; }
-    .bar { height: 100%; background: linear-gradient(90deg, #7c3aed, #4f46e5); border-radius: 99px; transition: width 0.6s ease; }
-    .pct { font-size: 0.78rem; color: #888; min-width: 40px; text-align: right; }
+    /* KYC */
+    .section-label{font-size:0.7rem;color:#555;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;font-weight:600}
+    .card-type-banner{text-align:center;margin-bottom:16px}
+    .card-type-badge{display:inline-block;padding:6px 20px;border-radius:99px;font-weight:700;font-size:0.95rem;border:1px solid}
 
-    .error-box { display: none; background: #2a1a1a; border: 1px solid #6a2a2a; color: #f87171; padding: 12px; border-radius: 10px; margin-top: 14px; font-size: 0.85rem; }
+    /* Card type colors */
+    .ct-aadhar{background:#0d1f3a;color:#60a5fa;border-color:#1d4ed8}
+    .ct-pan{background:#1a1a0d;color:#fbbf24;border-color:#d97706}
+    .ct-driving{background:#0d2a1a;color:#34d399;border-color:#059669}
+    .ct-voter{background:#2a0d1a;color:#f472b6;border-color:#db2777}
+    .ct-passport{background:#1a0d2a;color:#c084fc;border-color:#9333ea}
+    .ct-office{background:#1a1a1a;color:#94a3b8;border-color:#475569}
+    .ct-unknown{background:#1a1a1a;color:#666;border-color:#333}
 
-    /* KYC specific */
-    .section-label { font-size: 0.75rem; color: #555; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; font-weight: 600; }
+    .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+    .field-item{background:#12122a;border:1px solid #2a2a4a;border-radius:10px;padding:11px}
+    .field-label{font-size:0.68rem;color:#555;text-transform:uppercase;letter-spacing:.05em}
+    .field-value{font-size:0.9rem;color:#e0e0e0;margin-top:3px;font-weight:600;word-break:break-all}
+    .field-value.highlight{color:#a78bfa}
 
-    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
-    .field-item { background: #12122a; border: 1px solid #2a2a4a; border-radius: 10px; padding: 12px; }
-    .field-item .field-label { font-size: 0.7rem; color: #555; text-transform: uppercase; letter-spacing: 0.05em; }
-    .field-item .field-value { font-size: 0.95rem; color: #e0e0e0; margin-top: 4px; font-weight: 600; }
-    .field-item .field-value.highlight { color: #a78bfa; }
+    .face-result{margin-top:14px;padding:14px;border-radius:12px;text-align:center}
+    .face-result.match{background:#0d2a1a;border:1px solid #22543d}
+    .face-result.no-match{background:#2a1a1a;border:1px solid #6a2a2a}
+    .face-icon{font-size:2.2rem;margin-bottom:6px}
+    .face-status{font-size:1rem;font-weight:700}
+    .face-result.match .face-status{color:#68d391}
+    .face-result.no-match .face-status{color:#f87171}
+    .face-score{font-size:0.82rem;color:#888;margin-top:3px}
 
-    .face-result { margin-top: 16px; padding: 16px; border-radius: 12px; text-align: center; }
-    .face-result.match { background: #0d2a1a; border: 1px solid #22543d; }
-    .face-result.no-match { background: #2a1a1a; border: 1px solid #6a2a2a; }
-    .face-result .face-icon { font-size: 2.5rem; margin-bottom: 8px; }
-    .face-result .face-status { font-size: 1.1rem; font-weight: 700; }
-    .face-result.match .face-status { color: #68d391; }
-    .face-result.no-match .face-status { color: #f87171; }
-    .face-result .face-score { font-size: 0.85rem; color: #888; margin-top: 4px; }
+    .raw-text{margin-top:14px;background:#0d0d1a;border:1px solid #2a2a4a;border-radius:10px;padding:12px;max-height:110px;overflow-y:auto}
+    .raw-text p{font-size:0.78rem;color:#555;font-family:monospace;line-height:1.6}
 
-    .raw-text { margin-top: 16px; background: #0d0d1a; border: 1px solid #2a2a4a; border-radius: 10px; padding: 14px; max-height: 120px; overflow-y: auto; }
-    .raw-text p { font-size: 0.8rem; color: #666; font-family: monospace; line-height: 1.6; }
+    .step-label{font-size:0.78rem;color:#a78bfa;font-weight:700;margin-bottom:6px;margin-top:16px}
 
-    /* History table */
-    .full-width { grid-column: 1 / -1; }
-    .history-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    thead th { text-align: left; padding: 10px 12px; color: #555; border-bottom: 1px solid #2a2a4a; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.75rem; }
-    tbody tr { border-bottom: 1px solid #1f1f3a; transition: background 0.15s; }
-    tbody tr:hover { background: #1f1f3a; }
-    tbody td { padding: 10px 12px; color: #ccc; }
-    tbody td.label-cell { color: #a78bfa; font-weight: 600; }
-    .no-history { color: #444; text-align: center; padding: 30px; font-size: 0.9rem; }
+    /* Supported cards legend */
+    .cards-legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+    .legend-item{font-size:0.72rem;padding:3px 10px;border-radius:99px;border:1px solid #2a2a4a;color:#888}
 
-    .preview-row { display: flex; gap: 14px; margin-top: 14px; }
-    .preview-row .preview-wrap { flex: 1; }
+    /* History */
+    .history-wrap{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:0.82rem}
+    thead th{text-align:left;padding:10px 12px;color:#555;border-bottom:1px solid #2a2a4a;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:0.72rem}
+    tbody tr{border-bottom:1px solid #1f1f3a;transition:background .15s}
+    tbody tr:hover{background:#1f1f3a}
+    tbody td{padding:10px 12px;color:#ccc}
+    tbody td.label-cell{color:#a78bfa;font-weight:600}
+    .no-history{color:#444;text-align:center;padding:28px;font-size:0.88rem}
   </style>
 </head>
 <body>
@@ -141,24 +116,19 @@
   <div class="logo">🧠</div>
   <div>
     <h1>Object Identifier + KYC Verification</h1>
-    <p>CNN Object Detection · OCR Text Extraction · Face Matching</p>
+    <p>CNN Object Detection &nbsp;·&nbsp; OCR Text Extraction &nbsp;·&nbsp; Face Matching</p>
   </div>
 </header>
 
-<!-- Tabs -->
 <div class="tabs">
-  <button class="tab-btn active" onclick="switchTab('cnn')">🔍 Object Identifier</button>
-  <button class="tab-btn" onclick="switchTab('kyc')">🪪 KYC / ID Card Verify</button>
+  <button class="tab-btn active" onclick="switchTab('cnn',this)">🔍 Object Identifier</button>
+  <button class="tab-btn" onclick="switchTab('kyc',this)">🪪 KYC / ID Verification</button>
 </div>
 
-<!-- ══════════════════════════════════════════ -->
-<!-- TAB 1: CNN Object Identifier               -->
-<!-- ══════════════════════════════════════════ -->
+<!-- ══════════ TAB 1: CNN ══════════ -->
 <div id="tab-cnn" class="tab-content active">
   <main>
     <div class="grid-2">
-
-      <!-- Upload -->
       <div class="card">
         <h2>📤 Upload Image</h2>
         <div class="drop-zone" id="cnn-drop" onclick="document.getElementById('cnn-input').click()">
@@ -166,50 +136,42 @@
           <strong>Click or drag & drop</strong>
           <p>Try: <span>books, laptops, bottles, chairs…</span></p>
         </div>
-        <input type="file" id="cnn-input" accept="image/*" style="display:none" />
+        <input type="file" id="cnn-input" accept="image/*" style="display:none"/>
         <div class="preview-wrap" id="cnn-preview-wrap">
-          <img class="preview-img" id="cnn-preview" />
+          <img class="preview-img" id="cnn-preview"/>
           <div class="file-name" id="cnn-fname"></div>
         </div>
-        <button class="btn" id="cnn-btn" onclick="uploadCNN()">🔍 Identify Object</button>
-        <div class="loader" id="cnn-loader"><div class="spinner"></div>Running CNN…</div>
+        <button class="btn btn-hidden" id="cnn-btn" onclick="uploadCNN()">🔍 Identify Object</button>
+        <div class="loader" id="cnn-loader"><div class="spinner"></div>Running CNN model…</div>
         <div class="error-box" id="cnn-error"></div>
       </div>
 
-      <!-- Result -->
       <div class="card">
         <h2>🎯 Result</h2>
+        <div id="cnn-placeholder" style="color:#333;text-align:center;margin-top:60px;font-size:0.88rem">Upload an image to see result here.</div>
         <div class="result-panel" id="cnn-result">
-          <div style="text-align:center;margin-bottom:12px;">
-            <img id="cnn-result-img" style="max-width:100%;max-height:160px;border-radius:10px;object-fit:contain;" />
+          <div style="text-align:center;margin-bottom:12px">
+            <img id="cnn-result-img" style="max-width:100%;max-height:150px;border-radius:10px;object-fit:contain"/>
           </div>
           <div class="result-label" id="cnn-label"></div>
           <div class="result-conf" id="cnn-conf"></div>
-          <div style="text-align:center;"><span class="badge" id="cnn-badge"></span></div>
+          <div style="text-align:center"><span class="badge" id="cnn-badge"></span></div>
           <div class="top3">
             <h4>Top 3 Predictions</h4>
             <div id="cnn-bars"></div>
           </div>
         </div>
-        <div id="cnn-placeholder" style="color:#333;text-align:center;margin-top:60px;font-size:0.9rem;">Upload an image to see CNN result here.</div>
       </div>
 
-      <!-- History -->
       <div class="card full-width">
         <h2>🗃️ Upload History</h2>
         <div class="history-wrap">
           <table>
-            <thead>
-              <tr><th>#</th><th>Filename</th><th>Identified Object</th><th>Confidence</th><th>Timestamp</th></tr>
-            </thead>
+            <thead><tr><th>#</th><th>Filename</th><th>Identified Object</th><th>Confidence</th><th>Timestamp</th></tr></thead>
             <tbody id="history-body">
               {% if history %}
                 {% for row in history %}
-                <tr>
-                  <td>{{ row.id }}</td><td>{{ row.filename }}</td>
-                  <td class="label-cell">{{ row.label }}</td>
-                  <td>{{ row.confidence }}%</td><td>{{ row.timestamp }}</td>
-                </tr>
+                <tr><td>{{row.id}}</td><td>{{row.filename}}</td><td class="label-cell">{{row.label}}</td><td>{{row.confidence}}%</td><td>{{row.timestamp}}</td></tr>
                 {% endfor %}
               {% else %}
                 <tr><td colspan="5" class="no-history">No uploads yet.</td></tr>
@@ -218,75 +180,72 @@
           </table>
         </div>
       </div>
-
     </div>
   </main>
 </div>
 
-<!-- ══════════════════════════════════════════ -->
-<!-- TAB 2: KYC ID Verification                 -->
-<!-- ══════════════════════════════════════════ -->
+<!-- ══════════ TAB 2: KYC ══════════ -->
 <div id="tab-kyc" class="tab-content">
   <main>
     <div class="grid-2">
 
-      <!-- Left: Upload Card + Selfie -->
+      <!-- Upload Panel -->
       <div class="card">
         <h2>🪪 Upload ID Card</h2>
 
-        <div class="section-label">Step 1 — Upload Aadhar or PAN Card</div>
+        <div class="cards-legend">
+          <span class="legend-item ct-aadhar" style="border-color:#1d4ed8;color:#60a5fa">🪪 Aadhar</span>
+          <span class="legend-item ct-pan" style="border-color:#d97706;color:#fbbf24">💳 PAN</span>
+          <span class="legend-item ct-driving" style="border-color:#059669;color:#34d399">🚗 Driving Licence</span>
+          <span class="legend-item ct-voter" style="border-color:#db2777;color:#f472b6">🗳️ Voter ID</span>
+          <span class="legend-item ct-passport" style="border-color:#9333ea;color:#c084fc">📔 Passport</span>
+          <span class="legend-item ct-office" style="border-color:#475569;color:#94a3b8">🏢 Office ID</span>
+        </div>
+
+        <div class="step-label">Step 1 — Upload any ID Card</div>
         <div class="drop-zone" id="card-drop" onclick="document.getElementById('card-input').click()">
           <div class="icon">🪪</div>
           <strong>Click or drag & drop card image</strong>
-          <p>Supports <span>Aadhar Card, PAN Card</span></p>
+          <p>Auto-detects <span>Aadhar, PAN, DL, Voter, Passport, Office ID</span></p>
         </div>
-        <input type="file" id="card-input" accept="image/*" style="display:none" />
+        <input type="file" id="card-input" accept="image/*" style="display:none"/>
         <div class="preview-wrap" id="card-preview-wrap">
-          <img class="preview-img" id="card-preview" />
+          <img class="preview-img" id="card-preview"/>
           <div class="file-name" id="card-fname"></div>
         </div>
 
-        <div style="margin-top:20px;">
-          <div class="section-label">Step 2 — Upload Selfie (optional for face match)</div>
-          <div class="drop-zone" id="selfie-drop" onclick="document.getElementById('selfie-input').click()">
-            <div class="icon">🤳</div>
-            <strong>Click or drag & drop selfie</strong>
-            <p>Clear face photo for <span>face matching</span></p>
-          </div>
-          <input type="file" id="selfie-input" accept="image/*" style="display:none" />
-          <div class="preview-wrap" id="selfie-preview-wrap">
-            <img class="preview-img" id="selfie-preview" />
-            <div class="file-name" id="selfie-fname"></div>
-          </div>
+        <div class="step-label">Step 2 — Upload Selfie (for face match)</div>
+        <div class="drop-zone" id="selfie-drop" onclick="document.getElementById('selfie-input').click()">
+          <div class="icon">🤳</div>
+          <strong>Click or drag & drop selfie</strong>
+          <p>Optional — for <span>face matching</span></p>
+        </div>
+        <input type="file" id="selfie-input" accept="image/*" style="display:none"/>
+        <div class="preview-wrap" id="selfie-preview-wrap">
+          <img class="preview-img" id="selfie-preview"/>
+          <div class="file-name" id="selfie-fname"></div>
         </div>
 
-        <button class="btn btn-full" id="kyc-btn" onclick="runKYC()">🔍 Extract & Verify</button>
+        <button class="btn btn-hidden" id="kyc-btn" onclick="runKYC()">🔍 Extract & Verify</button>
         <div class="loader" id="kyc-loader"><div class="spinner"></div>Running OCR + Face Match…</div>
         <div class="error-box" id="kyc-error"></div>
       </div>
 
-      <!-- Right: KYC Result -->
+      <!-- Result Panel -->
       <div class="card">
         <h2>📋 Verification Result</h2>
+        <div id="kyc-placeholder" style="color:#333;text-align:center;margin-top:60px;font-size:0.88rem">Upload a card to see extracted details here.</div>
+        <div id="kyc-result" style="display:none">
 
-        <div id="kyc-placeholder" style="color:#333;text-align:center;margin-top:60px;font-size:0.9rem;">
-          Upload a card to see extracted details here.
-        </div>
-
-        <div id="kyc-result" style="display:none;">
-
-          <!-- Card type badge -->
-          <div style="text-align:center;margin-bottom:16px;">
-            <span class="badge" id="kyc-card-type" style="font-size:0.9rem;padding:6px 16px;"></span>
+          <div class="card-type-banner">
+            <span class="card-type-badge" id="kyc-card-badge"></span>
           </div>
 
-          <!-- Extracted Fields -->
           <div class="section-label">Extracted Information</div>
           <div class="field-grid" id="kyc-fields"></div>
 
-          <!-- Face Match Result -->
-          <div id="kyc-face-section" style="display:none;">
-            <div class="section-label" style="margin-top:16px;">Face Match Result</div>
+          <div id="kyc-face-section" style="display:none">
+            <div class="section-label" style="margin-top:14px">Face Match Result</div>
             <div class="face-result" id="kyc-face-result">
               <div class="face-icon" id="face-icon"></div>
               <div class="face-status" id="face-status"></div>
@@ -294,12 +253,10 @@
             </div>
           </div>
 
-          <!-- Raw OCR Text -->
-          <div style="margin-top:16px;">
+          <div style="margin-top:14px">
             <div class="section-label">Raw OCR Text</div>
             <div class="raw-text" id="kyc-raw"></div>
           </div>
-
         </div>
       </div>
 
@@ -308,197 +265,140 @@
 </div>
 
 <script>
-// ─────────────────────────── Tab Switching ───────────────────────────
-function switchTab(tab) {
+// ── Tab switching ──
+function switchTab(tab, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
-  event.target.classList.add('active');
+  btn.classList.add('active');
 }
 
-// ─────────────────────────── CNN Logic ───────────────────────────
-let cnnFile = null;
+// ── Card type styles ──
+const ctStyles = {
+  aadhar:  {cls:'ct-aadhar',  label:'🪪 Aadhar Card'},
+  pan:     {cls:'ct-pan',     label:'💳 PAN Card'},
+  driving: {cls:'ct-driving', label:'🚗 Driving Licence'},
+  voter:   {cls:'ct-voter',   label:'🗳️ Voter ID Card'},
+  passport:{cls:'ct-passport',label:'📔 Passport'},
+  office:  {cls:'ct-office',  label:'🏢 Office / Employee ID'},
+  unknown: {cls:'ct-unknown', label:'❓ Unknown Card'},
+};
 
-setupDrop('cnn-drop', 'cnn-input', f => {
-  cnnFile = f;
-  showPreview(f, 'cnn-preview-wrap', 'cnn-preview', 'cnn-fname');
-  show('cnn-btn'); hide('cnn-error'); hide('cnn-result'); show('cnn-placeholder');
-});
-document.getElementById('cnn-input').addEventListener('change', e => {
-  if (e.target.files[0]) {
-    cnnFile = e.target.files[0];
-    showPreview(cnnFile, 'cnn-preview-wrap', 'cnn-preview', 'cnn-fname');
-    show('cnn-btn'); hide('cnn-error'); hide('cnn-result'); show('cnn-placeholder');
-  }
-});
+// ── CNN ──
+let cnnFile = null;
+setupDrop('cnn-drop','cnn-input', f => { cnnFile=f; showPreview(f,'cnn-preview-wrap','cnn-preview','cnn-fname'); showEl('cnn-btn'); hideEl('cnn-error'); hideEl('cnn-result'); showEl('cnn-placeholder'); });
+document.getElementById('cnn-input').addEventListener('change', e => { if(e.target.files[0]){ cnnFile=e.target.files[0]; showPreview(cnnFile,'cnn-preview-wrap','cnn-preview','cnn-fname'); showEl('cnn-btn'); hideEl('cnn-error'); hideEl('cnn-result'); showEl('cnn-placeholder'); }});
 
 async function uploadCNN() {
   if (!cnnFile) return;
   setLoading('cnn', true);
-  const fd = new FormData();
-  fd.append('file', cnnFile);
+  const fd = new FormData(); fd.append('file', cnnFile);
   try {
-    const res = await fetch('/upload', { method: 'POST', body: fd });
+    const res = await fetch('/upload', {method:'POST', body:fd});
     const data = await res.json();
     if (data.error) { showError('cnn-error', data.error); return; }
-    // Show result
     document.getElementById('cnn-result-img').src = data.image_url;
     document.getElementById('cnn-label').textContent = data.label;
     document.getElementById('cnn-conf').textContent = `Confidence: ${data.confidence}%`;
     document.getElementById('cnn-badge').textContent = `${data.confidence}% confidence`;
-    const bars = document.getElementById('cnn-bars');
-    bars.innerHTML = '';
+    const bars = document.getElementById('cnn-bars'); bars.innerHTML='';
     data.top3.forEach(item => {
-      bars.innerHTML += `<div class="top3-item">
-        <span>${item.label}</span>
-        <div class="bar-wrap"><div class="bar" style="width:${item.confidence}%"></div></div>
-        <span class="pct">${item.confidence}%</span>
-      </div>`;
+      bars.innerHTML += `<div class="top3-item"><span>${item.label}</span><div class="bar-wrap"><div class="bar" style="width:${item.confidence}%"></div></div><span class="pct">${item.confidence}%</span></div>`;
     });
-    show('cnn-result'); hide('cnn-placeholder');
+    showEl('cnn-result'); hideEl('cnn-placeholder');
     addHistoryRow(data);
-  } catch(e) { showError('cnn-error', 'Network error.'); }
+  } catch(e) { showError('cnn-error','Network error.'); }
   finally { setLoading('cnn', false); }
 }
 
-// ─────────────────────────── KYC Logic ───────────────────────────
-let cardFile = null, selfieFile = null;
+// ── KYC ──
+let cardFile=null, selfieFile=null;
 
-setupDrop('card-drop', 'card-input', f => {
-  cardFile = f;
-  showPreview(f, 'card-preview-wrap', 'card-preview', 'card-fname');
-  if (cardFile) { document.getElementById('kyc-btn').style.display = 'block'; }
-});
-document.getElementById('card-input').addEventListener('change', e => {
-  if (e.target.files[0]) {
-    cardFile = e.target.files[0];
-    showPreview(cardFile, 'card-preview-wrap', 'card-preview', 'card-fname');
-    document.getElementById('kyc-btn').style.display = 'block';
-  }
-});
+setupDrop('card-drop','card-input', f => { cardFile=f; showPreview(f,'card-preview-wrap','card-preview','card-fname'); showEl('kyc-btn'); });
+document.getElementById('card-input').addEventListener('change', e => { if(e.target.files[0]){ cardFile=e.target.files[0]; showPreview(cardFile,'card-preview-wrap','card-preview','card-fname'); showEl('kyc-btn'); }});
 
-setupDrop('selfie-drop', 'selfie-input', f => {
-  selfieFile = f;
-  showPreview(f, 'selfie-preview-wrap', 'selfie-preview', 'selfie-fname');
-});
-document.getElementById('selfie-input').addEventListener('change', e => {
-  if (e.target.files[0]) {
-    selfieFile = e.target.files[0];
-    showPreview(selfieFile, 'selfie-preview-wrap', 'selfie-preview', 'selfie-fname');
-  }
-});
+setupDrop('selfie-drop','selfie-input', f => { selfieFile=f; showPreview(f,'selfie-preview-wrap','selfie-preview','selfie-fname'); });
+document.getElementById('selfie-input').addEventListener('change', e => { if(e.target.files[0]){ selfieFile=e.target.files[0]; showPreview(selfieFile,'selfie-preview-wrap','selfie-preview','selfie-fname'); }});
 
 async function runKYC() {
   if (!cardFile) return;
-  setLoading('kyc', true);
-  hide('kyc-error'); hide('kyc-result'); show('kyc-placeholder');
-
-  const fd = new FormData();
-  fd.append('card', cardFile);
+  setLoading('kyc', true); hideEl('kyc-error'); hideEl('kyc-result'); showEl('kyc-placeholder');
+  const fd = new FormData(); fd.append('card', cardFile);
   if (selfieFile) fd.append('selfie', selfieFile);
-
   try {
-    const res = await fetch('/ocr', { method: 'POST', body: fd });
+    const res = await fetch('/ocr', {method:'POST', body:fd});
     const data = await res.json();
     if (data.error) { showError('kyc-error', data.error); return; }
 
     const cd = data.card_data;
+    const ct = data.card_type || 'unknown';
+    const style = ctStyles[ct] || ctStyles.unknown;
 
-    // Card type
-    document.getElementById('kyc-card-type').textContent = cd.card_type || 'ID Card';
+    // Card type badge
+    const badge = document.getElementById('kyc-card-badge');
+    badge.textContent = style.label;
+    badge.className = 'card-type-badge ' + style.cls;
 
-    // Build fields
-    const fieldsEl = document.getElementById('kyc-fields');
-    fieldsEl.innerHTML = '';
-    const fields = [];
-    if (cd.name)          fields.push({ label: 'Name', value: cd.name });
-    if (cd.dob)           fields.push({ label: 'Date of Birth', value: cd.dob });
-    if (cd.gender)        fields.push({ label: 'Gender', value: cd.gender });
-    if (cd.aadhar_number) fields.push({ label: 'Aadhar Number', value: cd.aadhar_number, highlight: true });
-    if (cd.pan_number)    fields.push({ label: 'PAN Number', value: cd.pan_number, highlight: true });
-    if (cd.father_name)   fields.push({ label: "Father's Name", value: cd.father_name });
-
-    if (fields.length === 0) {
-      fieldsEl.innerHTML = '<p style="color:#555;font-size:0.85rem;">Could not extract structured fields. See raw text below.</p>';
-    } else {
-      fields.forEach(f => {
-        fieldsEl.innerHTML += `<div class="field-item">
-          <div class="field-label">${f.label}</div>
-          <div class="field-value ${f.highlight ? 'highlight' : ''}">${f.value}</div>
-        </div>`;
-      });
-    }
-
-    // Raw OCR text
-    const rawEl = document.getElementById('kyc-raw');
-    rawEl.innerHTML = '';
-    (cd.raw_text || []).forEach(line => {
-      rawEl.innerHTML += `<p>${line}</p>`;
+    // Fields — show all non-null, non-raw_text keys
+    const skip = new Set(['card_type','raw_text']);
+    const fieldsEl = document.getElementById('kyc-fields'); fieldsEl.innerHTML='';
+    const highlightKeys = new Set(['aadhar_number','pan_number','dl_number','voter_id','passport_number','employee_id']);
+    let count = 0;
+    Object.entries(cd).forEach(([k,v]) => {
+      if (skip.has(k) || !v) return;
+      count++;
+      const label = k.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+      fieldsEl.innerHTML += `<div class="field-item"><div class="field-label">${label}</div><div class="field-value ${highlightKeys.has(k)?'highlight':''}">${v}</div></div>`;
     });
+    if (count===0) fieldsEl.innerHTML='<p style="color:#555;font-size:0.82rem;grid-column:1/-1">Could not extract structured fields. See raw text below.</p>';
+
+    // Raw text
+    const rawEl = document.getElementById('kyc-raw'); rawEl.innerHTML='';
+    (cd.raw_text||[]).forEach(line => { rawEl.innerHTML += `<p>${line}</p>`; });
 
     // Face match
     if (data.face_match) {
       const fm = data.face_match;
       const faceEl = document.getElementById('kyc-face-result');
-      faceEl.className = 'face-result ' + (fm.match ? 'match' : 'no-match');
+      faceEl.className = 'face-result ' + (fm.match?'match':'no-match');
       document.getElementById('face-icon').textContent = fm.match ? '✅' : '❌';
       document.getElementById('face-status').textContent = fm.status;
       document.getElementById('face-score').textContent = `Similarity: ${fm.similarity}%`;
-      show('kyc-face-section');
-    } else {
-      hide('kyc-face-section');
-    }
+      showEl('kyc-face-section');
+    } else { hideEl('kyc-face-section'); }
 
-    show('kyc-result'); hide('kyc-placeholder');
-
-  } catch(e) { showError('kyc-error', 'Request failed. Try again.'); }
+    showEl('kyc-result'); hideEl('kyc-placeholder');
+  } catch(e) { showError('kyc-error','Request failed. Try again.'); }
   finally { setLoading('kyc', false); }
 }
 
-// ─────────────────────────── History ───────────────────────────
+// ── Helpers ──
+function setupDrop(zoneId, inputId, cb) {
+  const z = document.getElementById(zoneId);
+  z.addEventListener('dragover', e => { e.preventDefault(); z.classList.add('drag-over'); });
+  z.addEventListener('dragleave', () => z.classList.remove('drag-over'));
+  z.addEventListener('drop', e => { e.preventDefault(); z.classList.remove('drag-over'); if(e.dataTransfer.files[0]) cb(e.dataTransfer.files[0]); });
+}
+function showPreview(file, wrapId, imgId, fnId) {
+  const r = new FileReader();
+  r.onload = e => { document.getElementById(imgId).src=e.target.result; document.getElementById(wrapId).style.display='block'; document.getElementById(fnId).textContent=file.name; };
+  r.readAsDataURL(file);
+}
+function setLoading(p, on) {
+  const btn=document.getElementById(p+'-btn'); if(btn) btn.disabled=on;
+  document.getElementById(p+'-loader').style.display=on?'block':'none';
+}
+function showEl(id){ const e=document.getElementById(id); if(e) e.style.display='block'; }
+function hideEl(id){ const e=document.getElementById(id); if(e) e.style.display='none'; }
+function showError(id,msg){ const e=document.getElementById(id); e.textContent='❌ '+msg; e.style.display='block'; }
 function addHistoryRow(data) {
-  const tbody = document.getElementById('history-body');
-  const noRow = tbody.querySelector('td[colspan]');
-  if (noRow) noRow.parentElement.remove();
-  const now = new Date().toISOString().replace('T',' ').slice(0,19);
-  const tr = document.createElement('tr');
-  tr.innerHTML = `<td>${tbody.querySelectorAll('tr').length+1}</td>
-    <td>${data.filename}</td><td class="label-cell">${data.label}</td>
-    <td>${data.confidence}%</td><td>${now}</td>`;
-  tbody.insertBefore(tr, tbody.firstChild);
+  const tb=document.getElementById('history-body');
+  const no=tb.querySelector('td[colspan]'); if(no) no.parentElement.remove();
+  const now=new Date().toISOString().replace('T',' ').slice(0,19);
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td>${tb.querySelectorAll('tr').length+1}</td><td>${data.filename}</td><td class="label-cell">${data.label}</td><td>${data.confidence}%</td><td>${now}</td>`;
+  tb.insertBefore(tr,tb.firstChild);
 }
-
-// ─────────────────────────── Utilities ───────────────────────────
-function setupDrop(zoneId, inputId, callback) {
-  const zone = document.getElementById(zoneId);
-  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-  zone.addEventListener('drop', e => {
-    e.preventDefault(); zone.classList.remove('drag-over');
-    if (e.dataTransfer.files[0]) callback(e.dataTransfer.files[0]);
-  });
-}
-
-function showPreview(file, wrapId, imgId, fnameId) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById(imgId).src = e.target.result;
-    document.getElementById(wrapId).style.display = 'block';
-    document.getElementById(fnameId).textContent = file.name;
-  };
-  reader.readAsDataURL(file);
-}
-
-function setLoading(prefix, on) {
-  const btn = document.getElementById(prefix + '-btn');
-  const loader = document.getElementById(prefix + '-loader');
-  if (btn) btn.disabled = on;
-  loader.style.display = on ? 'block' : 'none';
-}
-
-function show(id) { const el = document.getElementById(id); if(el) el.style.display = 'block'; }
-function hide(id) { const el = document.getElementById(id); if(el) el.style.display = 'none'; }
-function showError(id, msg) { const el = document.getElementById(id); el.textContent = '❌ ' + msg; el.style.display = 'block'; }
 </script>
 </body>
 </html>

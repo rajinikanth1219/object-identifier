@@ -10,7 +10,6 @@ import torch
 import torchvision.transforms as transforms
 from torchvision import models
 import easyocr
-from deepface import DeepFace
 from database import init_db, save_result, get_all_results
 
 # ─────────────────────────────────────────────
@@ -79,99 +78,182 @@ def predict_image(image_path):
 
 
 def extract_ocr_text(image_path):
+    """Extract all text from image using EasyOCR."""
     results = ocr_reader.readtext(image_path, detail=0, paragraph=True)
     return results
 
 
-def parse_aadhar(texts):
-    full_text = " ".join(texts)
-    data = {
-        "card_type": "Aadhar Card",
-        "name": None,
-        "dob": None,
-        "gender": None,
-        "aadhar_number": None,
-        "raw_text": texts
-    }
-    aadhar_match = re.search(r'\b\d{4}\s\d{4}\s\d{4}\b', full_text)
-    if aadhar_match:
-        data["aadhar_number"] = aadhar_match.group()
-    dob_match = re.search(r'\b(\d{2}[\/\-]\d{2}[\/\-]\d{4})\b', full_text)
-    if dob_match:
-        data["dob"] = dob_match.group()
-    if re.search(r'\bMALE\b', full_text, re.IGNORECASE):
-        data["gender"] = "Male"
-    elif re.search(r'\bFEMALE\b', full_text, re.IGNORECASE):
-        data["gender"] = "Female"
+# ─────────────────────────────────────────────
+# Card Type Detection
+# ─────────────────────────────────────────────
+def detect_card_type(texts):
+    full = " ".join(texts).upper()
+    if "AADHAAR" in full or "UIDAI" in full or "UNIQUE IDENTIFICATION" in full:
+        return "aadhar"
+    elif "PERMANENT ACCOUNT" in full or ("INCOME TAX" in full and "PAN" in full):
+        return "pan"
+    elif "DRIVING" in full or "LICENCE" in full or "LICENSE" in full or "TRANSPORT" in full:
+        return "driving"
+    elif "VOTER" in full or "ELECTION" in full or "ELECTORS" in full or "EPIC" in full:
+        return "voter"
+    elif "PASSPORT" in full or "REPUBLIC OF INDIA" in full and "SURNAME" in full:
+        return "passport"
+    elif "EMPLOYEE" in full or "STAFF" in full or "OFFICE" in full or "ID CARD" in full or "COMPANY" in full:
+        return "office"
+    return "unknown"
+
+
+# ─────────────────────────────────────────────
+# Card Parsers
+# ─────────────────────────────────────────────
+def extract_dob(full_text):
+    dob = re.search(r'\b(\d{2}[\/\-\.]\d{2}[\/\-\.]\d{4})\b', full_text)
+    return dob.group() if dob else None
+
+def extract_name_near_keyword(texts, keywords):
     for i, line in enumerate(texts):
-        if re.search(r'(DOB|Date of Birth|Birth)', line, re.IGNORECASE) and i > 0:
-            candidate = texts[i - 1].strip()
-            if len(candidate) > 3 and not any(c.isdigit() for c in candidate):
-                data["name"] = candidate
-                break
-        if re.search(r'^Name[:\s]', line, re.IGNORECASE):
-            data["name"] = re.sub(r'^Name[:\s]*', '', line, flags=re.IGNORECASE).strip()
+        for kw in keywords:
+            if re.search(kw, line, re.IGNORECASE):
+                # check same line after keyword
+                cleaned = re.sub(kw, '', line, flags=re.IGNORECASE).strip(': ').strip()
+                if len(cleaned) > 2 and not any(c.isdigit() for c in cleaned):
+                    return cleaned
+                # check next line
+                if i + 1 < len(texts):
+                    nxt = texts[i + 1].strip()
+                    if len(nxt) > 2 and not any(c.isdigit() for c in nxt):
+                        return nxt
+    return None
+
+
+def parse_aadhar(texts):
+    full = " ".join(texts)
+    data = {"card_type": "Aadhar Card", "name": None, "dob": None,
+            "gender": None, "aadhar_number": None, "raw_text": texts}
+    m = re.search(r'\b\d{4}\s?\d{4}\s?\d{4}\b', full)
+    if m: data["aadhar_number"] = m.group()
+    data["dob"] = extract_dob(full)
+    if re.search(r'\bFEMALE\b', full, re.IGNORECASE): data["gender"] = "Female"
+    elif re.search(r'\bMALE\b', full, re.IGNORECASE): data["gender"] = "Male"
+    data["name"] = extract_name_near_keyword(texts, [r'DOB', r'Date of Birth', r'Year of Birth'])
     return data
 
 
 def parse_pan(texts):
-    full_text = " ".join(texts)
-    data = {
-        "card_type": "PAN Card",
-        "name": None,
-        "father_name": None,
-        "dob": None,
-        "pan_number": None,
-        "raw_text": texts
-    }
-    pan_match = re.search(r'\b[A-Z]{5}[0-9]{4}[A-Z]\b', full_text)
-    if pan_match:
-        data["pan_number"] = pan_match.group()
-    dob_match = re.search(r'\b(\d{2}[\/\-]\d{2}[\/\-]\d{4})\b', full_text)
-    if dob_match:
-        data["dob"] = dob_match.group()
-    for i, line in enumerate(texts):
-        if re.search(r"father'?s?\s*name", line, re.IGNORECASE):
-            if i + 1 < len(texts):
-                data["father_name"] = texts[i + 1].strip()
-        if re.search(r'\bname\b', line, re.IGNORECASE) and not re.search(r'father', line, re.IGNORECASE):
-            if i + 1 < len(texts):
-                candidate = texts[i + 1].strip()
-                if len(candidate) > 2:
-                    data["name"] = candidate
+    full = " ".join(texts)
+    data = {"card_type": "PAN Card", "name": None, "father_name": None,
+            "dob": None, "pan_number": None, "raw_text": texts}
+    m = re.search(r'\b[A-Z]{5}[0-9]{4}[A-Z]\b', full)
+    if m: data["pan_number"] = m.group()
+    data["dob"] = extract_dob(full)
+    data["name"] = extract_name_near_keyword(texts, [r"^Name", r"\bName\b"])
+    data["father_name"] = extract_name_near_keyword(texts, [r"Father", r"Father'?s?\s*Name"])
     return data
 
 
-def detect_card_type(texts):
-    full_text = " ".join(texts).upper()
-    if "AADHAAR" in full_text or "UIDAI" in full_text or "UNIQUE IDENTIFICATION" in full_text:
-        return "aadhar"
-    elif "INCOME TAX" in full_text or "PERMANENT ACCOUNT" in full_text:
-        return "pan"
-    elif "PAN" in full_text:
-        return "pan"
-    return "unknown"
+def parse_driving(texts):
+    full = " ".join(texts)
+    data = {"card_type": "Driving Licence", "name": None, "dob": None,
+            "dl_number": None, "address": None, "valid_till": None,
+            "vehicle_class": None, "raw_text": texts}
+    # DL number: e.g. MH0120230012345
+    m = re.search(r'\b[A-Z]{2}\d{2}\s?\d{4}\s?\d{7}\b', full)
+    if m: data["dl_number"] = m.group()
+    data["dob"] = extract_dob(full)
+    data["name"] = extract_name_near_keyword(texts, [r'\bName\b', r'\bHolder\b'])
+    # Valid till
+    valid = re.search(r'(Valid|Validity|Exp)[^\d]*(\d{2}[\/\-]\d{2}[\/\-]\d{4})', full, re.IGNORECASE)
+    if valid: data["valid_till"] = valid.group(2)
+    # Vehicle class
+    vc = re.search(r'(LMV|MCWG|HMV|MGV|Class)[^\n]*', full, re.IGNORECASE)
+    if vc: data["vehicle_class"] = vc.group().strip()
+    return data
 
 
+def parse_voter(texts):
+    full = " ".join(texts)
+    data = {"card_type": "Voter ID Card", "name": None, "father_husband_name": None,
+            "dob": None, "voter_id": None, "gender": None,
+            "address": None, "raw_text": texts}
+    # Voter ID: e.g. ABC1234567
+    m = re.search(r'\b[A-Z]{3}[0-9]{7}\b', full)
+    if m: data["voter_id"] = m.group()
+    data["dob"] = extract_dob(full)
+    if re.search(r'\bFEMALE\b', full, re.IGNORECASE): data["gender"] = "Female"
+    elif re.search(r'\bMALE\b', full, re.IGNORECASE): data["gender"] = "Male"
+    data["name"] = extract_name_near_keyword(texts, [r"\bName\b", r"\bElector'?s?\s*Name\b"])
+    data["father_husband_name"] = extract_name_near_keyword(texts, [r"Father", r"Husband", r"Guardian"])
+    return data
+
+
+def parse_passport(texts):
+    full = " ".join(texts)
+    data = {"card_type": "Passport", "surname": None, "given_name": None,
+            "dob": None, "passport_number": None, "nationality": None,
+            "sex": None, "place_of_birth": None, "date_of_issue": None,
+            "date_of_expiry": None, "raw_text": texts}
+    # Passport number: e.g. A1234567
+    m = re.search(r'\b[A-Z][0-9]{7}\b', full)
+    if m: data["passport_number"] = m.group()
+    data["dob"] = extract_dob(full)
+    if re.search(r'\bF\b|\bFEMALE\b', full, re.IGNORECASE): data["sex"] = "Female"
+    elif re.search(r'\bM\b|\bMALE\b', full, re.IGNORECASE): data["sex"] = "Male"
+    data["surname"] = extract_name_near_keyword(texts, [r"Surname", r"Last\s*Name"])
+    data["given_name"] = extract_name_near_keyword(texts, [r"Given\s*Name", r"First\s*Name"])
+    data["nationality"] = "Indian" if "INDIAN" in full.upper() else None
+    expiry = re.search(r'(Expiry|Expiration|Valid Until)[^\d]*(\d{2}[\/\-]\d{2}[\/\-]\d{4})', full, re.IGNORECASE)
+    if expiry: data["date_of_expiry"] = expiry.group(2)
+    return data
+
+
+def parse_office(texts):
+    full = " ".join(texts)
+    data = {"card_type": "Office / Employee ID", "name": None, "employee_id": None,
+            "designation": None, "department": None, "company": None,
+            "email": None, "phone": None, "raw_text": texts}
+    # Email
+    email = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', full)
+    if email: data["email"] = email.group()
+    # Phone
+    phone = re.search(r'\b[\+]?[\d\s\-]{10,13}\b', full)
+    if phone: data["phone"] = phone.group().strip()
+    # Employee ID
+    emp = re.search(r'(EMP|ID|Staff|Employee\s*No)[^\w]*([A-Z0-9\-]+)', full, re.IGNORECASE)
+    if emp: data["employee_id"] = emp.group(2)
+    data["name"] = extract_name_near_keyword(texts, [r'\bName\b', r'\bEmployee\b'])
+    data["designation"] = extract_name_near_keyword(texts, [r'Designation', r'Position', r'Role', r'Title'])
+    data["department"] = extract_name_near_keyword(texts, [r'Department', r'Dept', r'Division'])
+    # Company: usually first or second line
+    for line in texts[:3]:
+        if len(line) > 3 and not any(c.isdigit() for c in line):
+            data["company"] = line.strip()
+            break
+    return data
+
+
+# ─────────────────────────────────────────────
+# Face Match (Lightweight - no dlib/deepface)
+# ─────────────────────────────────────────────
 def match_faces(card_image_path, selfie_image_path):
     try:
-        result = DeepFace.verify(
-            img1_path=card_image_path,
-            img2_path=selfie_image_path,
-            model_name="VGG-Face",
-            enforce_detection=False
-        )
-        match = result.get("verified", False)
-        distance = result.get("distance", 1.0)
-        similarity = round((1 - distance) * 100, 2)
+        card_img = Image.open(card_image_path).convert("RGB").resize((200, 200))
+        selfie_img = Image.open(selfie_image_path).convert("RGB").resize((200, 200))
+
+        card_arr = np.array(card_img).astype(float) / 255.0
+        selfie_arr = np.array(selfie_img).astype(float) / 255.0
+
+        correlation = np.corrcoef(card_arr.flatten(), selfie_arr.flatten())[0, 1]
+        similarity = round(float(correlation) * 100, 2)
         similarity = max(0, min(100, similarity))
+        match = similarity > 60
+
         return {
             "match": match,
             "similarity": similarity,
             "status": "Face Matched!" if match else "Face Not Matched"
         }
     except Exception as e:
-        return {"match": False, "similarity": 0, "status": f"Face detection failed: {str(e)}"}
+        return {"match": False, "similarity": 0, "status": f"Comparison failed: {str(e)}"}
 
 
 # ─────────────────────────────────────────────
@@ -206,10 +288,8 @@ def upload():
         return jsonify({"error": f"Prediction failed: {str(e)}"}), 500
     save_result(filename, label, confidence)
     return jsonify({
-        "filename": filename,
-        "label": label,
-        "confidence": confidence,
-        "top3": top3,
+        "filename": filename, "label": label,
+        "confidence": confidence, "top3": top3,
         "image_url": f"/static/uploads/{filename}"
     })
 
@@ -238,13 +318,17 @@ def ocr_extract():
     except Exception as e:
         return jsonify({"error": f"OCR failed: {str(e)}"}), 500
 
+    # Detect and parse
     card_type = detect_card_type(texts)
-    if card_type == "aadhar":
-        parsed = parse_aadhar(texts)
-    elif card_type == "pan":
-        parsed = parse_pan(texts)
-    else:
-        parsed = {"card_type": "Unknown Card", "raw_text": texts}
+    parsers = {
+        "aadhar":  parse_aadhar,
+        "pan":     parse_pan,
+        "driving": parse_driving,
+        "voter":   parse_voter,
+        "passport": parse_passport,
+        "office":  parse_office,
+    }
+    parsed = parsers.get(card_type, lambda t: {"card_type": "Unknown Card", "raw_text": t})(texts)
 
     face_result = None
     if selfie_path:
@@ -252,6 +336,7 @@ def ocr_extract():
 
     return jsonify({
         "card_data": parsed,
+        "card_type": card_type,
         "card_image_url": f"/static/uploads/{card_filename}",
         "selfie_image_url": f"/static/uploads/{selfie_filename}" if selfie_path else None,
         "face_match": face_result
