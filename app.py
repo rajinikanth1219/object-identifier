@@ -296,51 +296,56 @@ def upload():
 
 @app.route("/ocr", methods=["POST"])
 def ocr_extract():
-    if "card" not in request.files:
-        return jsonify({"error": "No card image provided"}), 400
-
-    card_file = request.files["card"]
-    selfie_file = request.files.get("selfie")
-
-    card_filename = "card_" + secure_filename(card_file.filename)
-    card_path = os.path.join(app.config["UPLOAD_FOLDER"], card_filename)
-    card_file.save(card_path)
-
-    selfie_path = None
-    selfie_filename = None
-    if selfie_file and selfie_file.filename:
-        selfie_filename = "selfie_" + secure_filename(selfie_file.filename)
-        selfie_path = os.path.join(app.config["UPLOAD_FOLDER"], selfie_filename)
-        selfie_file.save(selfie_path)
-
     try:
+        if "card" not in request.files:
+            return jsonify({"error": "No card image provided"}), 400
+
+        card_file = request.files["card"]
+        selfie_file = request.files.get("selfie")
+
+        card_filename = "card_" + secure_filename(card_file.filename)
+        card_path = os.path.join(app.config["UPLOAD_FOLDER"], card_filename)
+        card_file.save(card_path)
+
+        selfie_path = None
+        selfie_filename = None
+        if selfie_file and selfie_file.filename:
+            selfie_filename = "selfie_" + secure_filename(selfie_file.filename)
+            selfie_path = os.path.join(app.config["UPLOAD_FOLDER"], selfie_filename)
+            selfie_file.save(selfie_path)
+
+        # Run OCR
         texts = extract_ocr_text(card_path)
+
+        # Detect and parse
+        card_type = detect_card_type(texts)
+        parsers = {
+            "aadhar":   parse_aadhar,
+            "pan":      parse_pan,
+            "driving":  parse_driving,
+            "voter":    parse_voter,
+            "passport": parse_passport,
+            "office":   parse_office,
+        }
+        parsed = parsers.get(card_type, lambda t: {"card_type": "Unknown Card", "raw_text": t})(texts)
+
+        # Face match
+        face_result = None
+        if selfie_path:
+            face_result = match_faces(card_path, selfie_path)
+
+        return jsonify({
+            "card_data": parsed,
+            "card_type": card_type,
+            "card_image_url": f"/static/uploads/{card_filename}",
+            "selfie_image_url": f"/static/uploads/{selfie_filename}" if selfie_path else None,
+            "face_match": face_result
+        })
+
     except Exception as e:
-        return jsonify({"error": f"OCR failed: {str(e)}"}), 500
-
-    # Detect and parse
-    card_type = detect_card_type(texts)
-    parsers = {
-        "aadhar":  parse_aadhar,
-        "pan":     parse_pan,
-        "driving": parse_driving,
-        "voter":   parse_voter,
-        "passport": parse_passport,
-        "office":  parse_office,
-    }
-    parsed = parsers.get(card_type, lambda t: {"card_type": "Unknown Card", "raw_text": t})(texts)
-
-    face_result = None
-    if selfie_path:
-        face_result = match_faces(card_path, selfie_path)
-
-    return jsonify({
-        "card_data": parsed,
-        "card_type": card_type,
-        "card_image_url": f"/static/uploads/{card_filename}",
-        "selfie_image_url": f"/static/uploads/{selfie_filename}" if selfie_path else None,
-        "face_match": face_result
-    })
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/history")
