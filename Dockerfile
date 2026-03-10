@@ -10,13 +10,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
 COPY . .
 RUN mkdir -p static/uploads
-
 EXPOSE 8080
-
-CMD gunicorn --bind 0.0.0.0:8080 --timeout 120 --workers 1 app:app
+CMD gunicorn --bind 0.0.0.0:8080 --timeout 300 --workers 1 --keep-alive 5 app:app
