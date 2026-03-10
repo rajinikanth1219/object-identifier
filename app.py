@@ -81,9 +81,10 @@ def predict_image(image_path):
 
 
 def extract_ocr_text(image_path):
-    """Extract all text from image using EasyOCR."""
-    results = ocr_reader.readtext(image_path, detail=0, paragraph=True)
-    return results
+    img = Image.open(image_path)
+    text = pytesseract.image_to_string(img)
+    lines = [line.strip() for line in text.split('\n') if line.strip()]
+    return lines
 
 
 # ─────────────────────────────────────────────
