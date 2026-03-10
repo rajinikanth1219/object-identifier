@@ -9,7 +9,7 @@ from PIL import Image
 import torch
 import torchvision.transforms as transforms
 from torchvision import models
-import easyocr
+import pytesseract
 from database import init_db, save_result, get_all_results
 
 # ─────────────────────────────────────────────
@@ -50,9 +50,12 @@ transform = transforms.Compose([
 # ─────────────────────────────────────────────
 # Load EasyOCR
 # ─────────────────────────────────────────────
-print("Loading OCR engine...")
-ocr_reader = easyocr.Reader(['en'], gpu=False)
-print("OCR engine loaded!")
+def extract_ocr_text(image_path):
+    """Extract all text from image using Tesseract OCR."""
+    img = Image.open(image_path)
+    text = pytesseract.image_to_string(img)
+    lines = [line.strip() for line in text.split('\n') if line.strip()]
+    return lines
 
 # Initialize DB
 init_db()

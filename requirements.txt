@@ -4,7 +4,7 @@ torchvision==0.15.2+cpu
 pillow==10.0.0
 werkzeug==2.3.7
 numpy==1.24.3
-easyocr==1.7.1
-deepface==0.0.79
+pytesseract==0.3.10
 opencv-python-headless==4.8.0.76
+gunicorn==21.2.0
 --extra-index-url https://download.pytorch.org/whl/cpu
